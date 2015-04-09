@@ -249,6 +249,7 @@ SOURCE_FILES = \
   Generator.cpp \
   HumanReadableStmt.cpp \
   Image.cpp \
+  InjectCoordinateIntrinsics.cpp \
   InjectHostDevBufferCopies.cpp \
   InjectOpenGLIntrinsics.cpp \
   Inline.cpp \
@@ -346,6 +347,7 @@ HEADER_FILES = \
   runtime/HalideRuntime.h \
   HumanReadableStmt.h \
   Image.h \
+  InjectCoordinateIntrinsics.h \
   InjectHostDevBufferCopies.h \
   InjectOpenGLIntrinsics.h \
   Inline.h \

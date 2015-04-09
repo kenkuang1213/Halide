@@ -37,6 +37,7 @@
 #include "Func.h"
 #include "ExprUsesVar.h"
 #include "FindCalls.h"
+#include "InjectCoordinateIntrinsics.h"
 #include "InjectOpenGLIntrinsics.h"
 #include "FuseGPUThreadLoops.h"
 #include "InjectHostDevBufferCopies.h"
@@ -1904,6 +1905,12 @@ Stmt lower(Function f, const Target &t, const vector<IRMutator *> &custom_passes
     debug(1) << "Dynamically skipping stages...\n";
     s = skip_stages(s, order);
     debug(2) << "Lowering after dynamically skipping stages:\n" << s << "\n\n";
+
+    if (t.has_gpu_coordinate_feature()) {
+        debug(1) << "Injecting coordinate intrinsics...\n";
+        s = inject_gpu_coordinate_intrinsics(s);
+        debug(2) << "Lowering after coordinate intrinsics:\n" << s << "\n\n";
+    }
 
     if (t.has_feature(Target::OpenGL)) {
         debug(1) << "Injecting OpenGL texture intrinsics...\n";
