@@ -1912,12 +1912,6 @@ Stmt lower(Function f, const Target &t, const vector<IRMutator *> &custom_passes
         debug(2) << "Lowering after coordinate intrinsics:\n" << s << "\n\n";
     }
 
-    if (t.has_feature(Target::OpenGL)) {
-        debug(1) << "Injecting OpenGL texture intrinsics...\n";
-        s = inject_opengl_intrinsics(s);
-        debug(2) << "Lowering after OpenGL intrinsics:\n" << s << "\n\n";
-    }
-
     debug(1) << "Performing storage flattening...\n";
     s = storage_flattening(s, order.back(), env);
     debug(2) << "Lowering after storage flattening:\n" << s << "\n\n";
@@ -1926,6 +1920,12 @@ Stmt lower(Function f, const Target &t, const vector<IRMutator *> &custom_passes
         debug(1) << "Injecting host <-> dev buffer copies...\n";
         s = inject_host_dev_buffer_copies(s, t);
         debug(2) << "Lowering after injecting host <-> dev buffer copies:\n" << s << "\n\n";
+    }
+
+    if (t.has_feature(Target::OpenGL)) {
+        debug(1) << "Injecting OpenGL texture intrinsics...\n";
+        s = inject_opengl_intrinsics(s);
+        debug(2) << "Lowering after OpenGL intrinsics:\n" << s << "\n\n";
     }
 
     if (t.has_gpu_feature()) {
