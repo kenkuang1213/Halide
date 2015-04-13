@@ -1,4 +1,4 @@
-#include "InjectCoordinateIntrinsics.h"
+#include "InjectCoordinatesIntrinsics.h"
 #include "IRMutator.h"
 #include "IROperator.h"
 #include "CodeGen_GPU_Dev.h"
@@ -11,9 +11,9 @@ namespace Internal {
 using std::string;
 using std::vector;
 
-class InjectCoordinateIntrinsics : public IRMutator {
+class InjectCoordinatesIntrinsics : public IRMutator {
 public:
-    InjectCoordinateIntrinsics() : inside_kernel_loop(false) {}
+    InjectCoordinatesIntrinsics() : inside_kernel_loop(false) {}
     Scope<int> scope;
     bool inside_kernel_loop;
 
@@ -43,7 +43,7 @@ private:
             value_arg};
 
         stmt = Evaluate::make(Call::make(value_arg.type(),
-                                         Call::gpu_coordinate_store,
+                                         Call::coordinates_store,
                                          args,
                                          Call::Intrinsic));
     }
@@ -67,7 +67,7 @@ private:
             call_args.push_back(IntImm::make(0));
         }
 
-        // Create gpu_coordinate_load("name", "name[.n]", name.buffer, x, y, c)
+        // Create coordinates_load("name", "name[.n]", name.buffer, x, y, c)
         // intrinsic call.
         // We need to pass "name[.n]" because if we need to add normalization
         // then we will this name as a prefix for "name[.n].extent" variable.
@@ -110,7 +110,7 @@ private:
         }
 
         expr = Call::make(call->type,
-                          Call::gpu_coordinate_load,
+                          Call::coordinates_load,
                           args,
                           Call::Intrinsic,
                           Function(),
@@ -144,12 +144,12 @@ private:
     }
 };
 
-Stmt inject_gpu_coordinate_intrinsics(Stmt s) {
+Stmt inject_coordinates_intrinsics(Stmt s) {
     debug(4)
-        << "InjectCoordinateIntrinsics: inject_coordinate_intrinsics stmt: "
+        << "InjectCoordinatesIntrinsics: inject_coordinates_intrinsics stmt: "
         << s << "\n";
     s = zero_gpu_loop_mins(s);
-    InjectCoordinateIntrinsics gl;
+    InjectCoordinatesIntrinsics gl;
     return gl.mutate(s);
 }
 }

@@ -27,7 +27,7 @@ private:
             IRMutator::visit(call);
             return;
         }
-        if (call->name == Call::gpu_coordinate_load) {
+        if (call->name == Call::coordinates_load) {
             vector<Expr> call_args = call->args;
             //
             // Create
@@ -37,7 +37,7 @@ private:
             //                    (y - y.min)/y.extent,
             //                    c)
             // out of
-            //  gpu_coordinate_load("name",
+            //  coordinates_load("name",
             //                      "name[.n]",
             //                      name.buffer,
             //                      x - x.min,
@@ -82,7 +82,7 @@ private:
             // during vectorization.
             expr = Call::make(call->type, Call::shuffle_vector,
                               vec(load_call, c_coordinate), Call::Intrinsic);
-        } else if (call->name == Call::gpu_coordinate_store) {
+        } else if (call->name == Call::coordinates_store) {
             user_assert(call->args.size() == 6)
                 << "GLSL stores require three coordinates.\n";
 

@@ -15,7 +15,7 @@ namespace Internal {
 /** Take a statement with for kernel for loops and turn loads and
  * stores inside the loops into coordinate-based load and store
  * intrinsics. */
-Stmt inject_gpu_coordinate_intrinsics(Stmt s);
+Stmt inject_coordinates_intrinsics(Stmt s);
 }
 }
 
