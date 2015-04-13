@@ -1,4 +1,4 @@
-// #include "BitWriter_3_2/ReaderWriter_3_2.h"
+#include "BitWriter_3_2/ReaderWriter_3_2.h"
 #include "CodeGen_RS_Dev.h"
 #include "CodeGen_Internal.h"
 #include "IROperator.h"
@@ -622,7 +622,7 @@ vector<char> CodeGen_RS_Dev::compile_to_src() {
 
     std::string str;
     llvm::raw_string_ostream OS(str);
-    // llvm_3_2::WriteBitcodeToFile(module, OS);
+    llvm_3_2::WriteBitcodeToFile(module, OS);
     OS.flush();
 
     /**

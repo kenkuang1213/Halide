@@ -317,6 +317,11 @@ SOURCE_FILES = \
   VaryingAttributes.cpp \
   VectorizeLoops.cpp
 
+BITWRITER_SOURCE_FILES = \
+  BitWriter_3_2/BitcodeWriter.cpp \
+  BitWriter_3_2/BitcodeWriterPass.cpp \
+  BitWriter_3_2/ValueEnumerator.cpp
+
 # The externally-visible header files that go into making Halide.h. Don't include anything here that includes llvm headers.
 HEADER_FILES = \
   AllocationBoundsInference.h \
@@ -421,6 +426,7 @@ HEADER_FILES = \
   VectorizeLoops.h
 
 OBJECTS = $(SOURCE_FILES:%.cpp=$(BUILD_DIR)/%.o)
+OBJECTS += $(BITWRITER_SOURCE_FILES:%.cpp=$(BUILD_DIR)/%.o)
 HEADERS = $(HEADER_FILES:%.h=src/%.h)
 
 RUNTIME_CPP_COMPONENTS = \
@@ -594,6 +600,10 @@ $(BUILD_DIR)/initmod_ptx.%_ll.o: $(BUILD_DIR)/initmod_ptx.%_ll.cpp
 
 $(BUILD_DIR)/initmod.%.o: $(BUILD_DIR)/initmod.%.cpp
 	$(CXX) $(BUILD_BIT_SIZE) -c $< -o $@ -MMD -MP -MF $(BUILD_DIR)/$*.d -MT $(BUILD_DIR)/$*.o
+
+$(BUILD_DIR)/BitWriter_3_2/%.o: src/BitWriter_3_2/%.cpp $(BUILD_DIR)/llvm_ok
+	@-mkdir -p $(BUILD_DIR)/BitWriter_3_2
+	$(CXX) $(CXX_FLAGS) -c $< -o $@ -MMD -MP -MF $(BUILD_DIR)/BitWriter_3_2/$*.d -MT $(BUILD_DIR)/BitWriter_3_2/$*.o
 
 $(BUILD_DIR)/%.o: src/%.cpp src/%.h $(BUILD_DIR)/llvm_ok
 	@-mkdir -p $(BUILD_DIR)
