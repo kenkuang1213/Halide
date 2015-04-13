@@ -227,7 +227,8 @@ enum class DeviceAPI {
     Default_GPU,
     CUDA,
     OpenCL,
-    GLSL
+    GLSL,
+    RS
 };
 #else
 struct DeviceAPI {
@@ -237,7 +238,8 @@ struct DeviceAPI {
         Default_GPU,
         CUDA,
         OpenCL,
-        GLSL
+        GLSL,
+        RS
     };
     int val;
     DeviceAPI() : val(Parent) { }

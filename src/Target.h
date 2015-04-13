@@ -57,6 +57,8 @@ struct Target {
 
         OpenGL,  ///< Enable the OpenGL runtime.
 
+        RS, ///< Enable the Renderscript runtime.
+
         UserContext,  ///< Generated code takes a user_context pointer as first argument
 
         RegisterMetadata,  ///< Generated code registers metadata for use with halide_enumerate_registered_filters
@@ -137,12 +139,12 @@ struct Target {
      * OpenGL, because it is not capable of gpgpu, and is not
      * scheduled via Func::gpu_tile. */
     bool has_gpu_feature() const {
-        return has_feature(CUDA) || has_feature(OpenCL);
+        return has_feature(CUDA) || has_feature(OpenCL) || has_feature(RS);
     }
 
     /** Some device apis use coordinate-based stores/loads. */
     bool has_coordinates_feature() const {
-        return has_feature(OpenGL);
+        return has_feature(OpenGL) || has_feature(RS);
     }
 
     bool operator==(const Target &other) const {

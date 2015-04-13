@@ -109,7 +109,10 @@ private:
             args[i + 3] = arg - min;
         }
 
-        expr = Call::make(call->type,
+        Type load_type = call->type;
+        // load_type.width = 4;
+
+        Expr load_call = Call::make(load_type,
                           Call::coordinates_load,
                           args,
                           Call::Intrinsic,
@@ -117,6 +120,9 @@ private:
                           0,
                           call->image,
                           call->param);
+        expr = load_call;
+        // expr = Call::make(call->type, Call::shuffle_vector,
+        //                   vec(load_call, args[4]), Call::Intrinsic);
     }
 
     void visit(const LetStmt *let) {
@@ -136,7 +142,7 @@ private:
     void visit(const For *loop) {
         bool old_kernel_loop = inside_kernel_loop;
         if (loop->for_type == ForType::Parallel &&
-            loop->device_api == DeviceAPI::GLSL) {
+            (loop->device_api == DeviceAPI::GLSL|| loop->device_api == DeviceAPI::RS)) {
             inside_kernel_loop = true;
         }
         IRMutator::visit(loop);

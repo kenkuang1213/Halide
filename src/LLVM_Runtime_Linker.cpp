@@ -115,6 +115,7 @@ DECLARE_CPP_INITMOD(module_jit_ref_count)
 DECLARE_CPP_INITMOD(module_aot_ref_count)
 DECLARE_CPP_INITMOD(device_interface)
 DECLARE_CPP_INITMOD(metadata)
+DECLARE_CPP_INITMOD(rs)
 
 #ifdef WITH_ARM
 DECLARE_LL_INITMOD(arm)
@@ -132,6 +133,7 @@ DECLARE_LL_INITMOD(posix_math)
 DECLARE_LL_INITMOD(pnacl_math)
 DECLARE_LL_INITMOD(win32_math)
 DECLARE_LL_INITMOD(ptx_dev)
+DECLARE_LL_INITMOD(rs_dev)
 #ifdef WITH_PTX
 DECLARE_LL_INITMOD(ptx_compute_20)
 DECLARE_LL_INITMOD(ptx_compute_30)
@@ -506,6 +508,8 @@ llvm::Module *get_initial_module_for_target(Target t, llvm::LLVMContext *c, bool
             } else {
                 // You're on your own to provide definitions of halide_opengl_get_proc_address and halide_opengl_create_context
             }
+        } else if (t.has_feature(Target::RS)) {
+            modules.push_back(get_initmod_rs(c, bits_64, debug));
         }
     }
 
@@ -577,6 +581,12 @@ llvm::Module *get_initial_module_for_ptx_device(Target target, llvm::LLVMContext
     }
 
     return modules[0];
+}
+#endif
+
+#ifdef WITH_RS
+llvm::Module *get_initial_module_for_rs_device(Target target, llvm::LLVMContext *c) {
+    return get_initmod_rs_dev_ll(c);
 }
 #endif
 
