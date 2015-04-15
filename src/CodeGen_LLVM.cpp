@@ -20,6 +20,14 @@
 #include "CodeGen_MIPS.h"
 #include "CodeGen_PNaCl.h"
 
+#if !(__cplusplus > 199711L || _MSC_VER >= 1800)
+
+// VS2013 isn't fully C++11 compatible, but it supports enough of what Halide
+// needs for now to be an acceptable minimum for Windows.
+#error "Halide requires C++11 or VS2013+; please upgrade your compiler."
+
+#endif
+
 namespace Halide {
 
 llvm::Module *codegen_llvm(const Module &module, llvm::LLVMContext &context) {
@@ -2167,6 +2175,9 @@ void CodeGen_LLVM::visit(const Call *op) {
             builder->CreateStore(elem_size, buffer_elem_size_ptr(buffer));
 
             int dims = op->args.size()/3;
+            user_assert(dims <= 4)
+                << "Halide currently has a limit of four dimensions on "
+                << "Funcs used on the GPU or passed to extern stages.\n";
             for (int i = 0; i < 4; i++) {
                 Value *min, *extent, *stride;
                 if (i < dims) {
