@@ -1,4 +1,4 @@
-#include "InjectCoordinatesIntrinsics.h"
+#include "InjectImageIntrinsics.h"
 #include "IRMutator.h"
 #include "IROperator.h"
 #include "CodeGen_GPU_Dev.h"
@@ -11,9 +11,9 @@ namespace Internal {
 using std::string;
 using std::vector;
 
-class InjectCoordinatesIntrinsics : public IRMutator {
+class InjectImageIntrinsics : public IRMutator {
 public:
-    InjectCoordinatesIntrinsics() : inside_kernel_loop(false) {}
+    InjectImageIntrinsics() : inside_kernel_loop(false) {}
     Scope<int> scope;
     bool inside_kernel_loop;
 
@@ -27,11 +27,11 @@ private:
         }
 
         internal_assert(provide->values.size() == 1)
-            << "Coordinate currently only supports single-valued stores.\n";
+            << "Image currently only supports single-valued stores.\n";
         user_assert(provide->args.size() == 3)
-            << "Coordinate stores require three coordinates.\n";
+            << "Image stores require three coordinates.\n";
 
-        // Create coordinate_store("name", name.buffer, x, y, c, value)
+        // Create image_store("name", name.buffer, x, y, c, value)
         // intrinsic.
         Expr value_arg = mutate(provide->values[0]);
         vector<Expr> args = {
@@ -43,7 +43,7 @@ private:
             value_arg};
 
         stmt = Evaluate::make(Call::make(value_arg.type(),
-                                         Call::coordinates_store,
+                                         Call::image_store,
                                          args,
                                          Call::Intrinsic));
     }
@@ -67,14 +67,12 @@ private:
             call_args.push_back(IntImm::make(0));
         }
 
-        // Create coordinates_load("name", "name[.n]", name.buffer, x, y, c)
-        // intrinsic call.
-        // We need to pass "name[.n]" because if we need to add normalization
-        // then we will this name as a prefix for "name[.n].extent" variable.
-        vector<Expr> args(6);
+        // Create image_load("name", name.buffer, x, x_extent, y, y_extent, ...).
+        // Extents can be used by successive passes. OpenGL, for example, uses them
+        // for coordinates normalization.
+        vector<Expr> args(2);
         args[0] = call->name;
-        args[1] = name;
-        args[2] = Variable::make(Handle(), call->name + ".buffer");
+        args[1] = Variable::make(Handle(), call->name + ".buffer");
         for (size_t i = 0; i < call_args.size(); i++) {
             string d = int_to_string(i);
             string min_name = name + ".min." + d;
@@ -82,38 +80,22 @@ private:
             if (scope.contains(min_name_constrained)) {
                 min_name = min_name_constrained;
             }
-
-            Expr min = Variable::make(Int(32), min_name);
-
-            // Remind users to explicitly specify the 'min' values of
-            // ImageParams accessed by coordinate-based filters.
-            if (i == 2 && call->param.defined()) {
-                bool const_min_constraint =
-                    call->param.min_constraint(i).defined() &&
-                    is_const(call->param.min_constraint(i));
-                if (!const_min_constraint) {
-                    user_warning
-                        << "Coordinates: Assuming min[2]==0 for ImageParam '"
-                        << name << "'. "
-                        << "Call set_min(2, min) or set_bounds(2, "
-                           "min, extent) to override.\n";
-                    min = Expr(0);
-                }
+            string extent_name = name + ".extent." + d;
+            string extent_name_constrained = extent_name + ".constrained";
+            if (scope.contains(extent_name_constrained)) {
+                extent_name = extent_name_constrained;
             }
 
-            // Inject intrinsics into the call argument
-            Expr arg = mutate(call_args[i]);
-            debug(4) << "Subtracting min from arg. arg:" << arg
-                     << " min:" << min << "\n";
-
-            args[i + 3] = arg - min;
+            Expr min = Variable::make(Int(32), min_name);
+            args.push_back(mutate(call_args[i]) - min);
+            args.push_back(Variable::make(Int(32), extent_name));
         }
 
         Type load_type = call->type;
         // load_type.width = 4;
 
         Expr load_call = Call::make(load_type,
-                          Call::coordinates_load,
+                          Call::image_load,
                           args,
                           Call::Intrinsic,
                           Function(),
@@ -150,12 +132,12 @@ private:
     }
 };
 
-Stmt inject_coordinates_intrinsics(Stmt s) {
+Stmt inject_image_intrinsics(Stmt s) {
     debug(4)
-        << "InjectCoordinatesIntrinsics: inject_coordinates_intrinsics stmt: "
+        << "InjectImageIntrinsics: inject_image_intrinsics stmt: "
         << s << "\n";
     s = zero_gpu_loop_mins(s);
-    InjectCoordinatesIntrinsics gl;
+    InjectImageIntrinsics gl;
     return gl.mutate(s);
 }
 }

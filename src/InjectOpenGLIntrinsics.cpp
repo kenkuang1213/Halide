@@ -11,7 +11,7 @@ namespace Internal {
 using std::string;
 using std::vector;
 
-/** Normalizes coordinate loads/stores and produces glsl_texture_load/stores. */
+/** Normalizes image loads/stores and produces glsl_texture_load/stores. */
 class InjectOpenGLIntrinsics : public IRMutator {
 public:
     InjectOpenGLIntrinsics()
@@ -27,45 +27,56 @@ private:
             IRMutator::visit(call);
             return;
         }
-        if (call->name == Call::coordinates_load) {
+        if (call->name == Call::image_load) {
             vector<Expr> call_args = call->args;
             //
             // Create
             //  glsl_texture_load("name",
             //                    name.buffer,
-            //                    (x - x.min)/x.extent,
-            //                    (y - y.min)/y.extent,
+            //                    (x - x_min + 0.5)/x_extent,
+            //                    (y - y_min + 0.5)/y_extent,
             //                    c)
-            // out of
-            //  coordinates_load("name",
-            //                      "name[.n]",
-            //                      name.buffer,
-            //                      x - x.min,
-            //                      y - y,min,
-            //                      c)
+            // from
+            //  image_load("name",
+            //                   name.buffer,
+            //                   x - x_min, x_extent,
+            //                   y - y_min, y_extent,
+            //                   c - c_min, c_extent
+            //                   )
             //
             vector<Expr> args(5);
             args[0] = call_args[0];    // "name"
-            const StringImm *string_imm = call_args[1].as<StringImm>();
-            string name = string_imm->value; // "name[.n]"
-            args[1] = call_args[2];    // name.buffer
+            args[1] = call_args[1];    // name.buffer
 
-            // Normalize x and y coordinates.
+            // Normalize first two coordinates.
             for (size_t i = 0; i < 2; i++) {
-                string d = int_to_string(i);
-                string extent_name = name + ".extent." + d;
-                string extent_name_constrained = extent_name + ".constrained";
-                if (scope.contains(extent_name_constrained)) {
-                    extent_name = extent_name_constrained;
-                }
-
-                Expr extent = Variable::make(Int(32), extent_name);
-
-                // Normalize x, y coordinates. Leave c intact
-                args[i + 2] =
-                    (Cast::make(Float(32), call_args[i + 3]) + 0.5f) / extent;
+                int to_index = 2 + i;
+                int from_index = 2 + i * 2;
+                args[to_index] =
+                  (Cast::make(Float(32), mutate(call_args[from_index])) + 0.5f) /
+                  mutate(call_args[from_index + 1]);
             }
-            Expr c_coordinate = call_args[5];
+
+            Expr c_arg = call_args[2 + 2 * 2];
+            // Remind users to explicitly specify the 'min' values of
+            // ImageParams accessed by GLSL-based filters.
+            if (call->param.defined()) {
+                bool const_min_constraint =
+                    call->param.min_constraint(2).defined() &&
+                    is_const(call->param.min_constraint(2));
+                if (!const_min_constraint) {
+                    user_warning
+                        << "Coordinates: Assuming min[2]==0 for ImageParam '"
+                        << args[0] << "'. "
+                        << "Call set_min(2, min) or set_bounds(2, "
+                           "min, extent) to override.\n";
+                    // If min value for 3rd dimension(c) is not defined or is
+                    // not constant, assume it is 0.
+                    c_arg = c_arg.as<Sub>()->a - Expr(0);
+                }
+            }
+
+            Expr c_coordinate = mutate(c_arg);
             args[4] = c_coordinate;
 
             Type load_type = call->type;
@@ -82,14 +93,14 @@ private:
             // during vectorization.
             expr = Call::make(call->type, Call::shuffle_vector,
                               vec(load_call, c_coordinate), Call::Intrinsic);
-        } else if (call->name == Call::coordinates_store) {
+        } else if (call->name == Call::image_store) {
             user_assert(call->args.size() == 6)
                 << "GLSL stores require three coordinates.\n";
 
             // Create
             //    gl_texture_store(name, name.buffer, x, y, c, value)
             // out of
-            //    coordinate_store(name, name.buffer, x, y, c, value)
+            //    image_store(name, name.buffer, x, y, c, value)
             vector<Expr> args(call->args);
             args[5] = mutate(call->args[5]); // mutate value
             expr = Call::make(call->type, Call::glsl_texture_store,

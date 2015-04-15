@@ -142,11 +142,6 @@ struct Target {
         return has_feature(CUDA) || has_feature(OpenCL) || has_feature(RS);
     }
 
-    /** Some device apis use coordinate-based stores/loads. */
-    bool has_coordinates_feature() const {
-        return has_feature(OpenGL) || has_feature(RS);
-    }
-
     bool operator==(const Target &other) const {
       return os == other.os &&
           arch == other.arch &&
