@@ -1584,7 +1584,7 @@ static void WriteFunction(const Function &F, llvm_3_2::ValueEnumerator &VE,
 
   if (NeedsMetadataAttachment)
     WriteMetadataAttachment(F, VE, Stream);
-  if (shouldPreserveBitcodeUseListOrder())
+  if (VE.shouldPreserveUseListOrder())
     WriteUseListBlock(&F, VE, Stream);
   VE.purgeFunction();
   Stream.ExitBlock();
@@ -1753,7 +1753,8 @@ static void WriteBlockInfo(const llvm_3_2::ValueEnumerator &VE,
 }
 
 /// WriteModule - Emit the specified module to the bitstream.
-static void WriteModule(const Module *M, BitstreamWriter &Stream) {
+static void WriteModule(const Module *M, BitstreamWriter &Stream,
+                        bool ShouldPreserveUseListOrder) {
   Stream.EnterSubblock(bitc::MODULE_BLOCK_ID, 3);
 
   SmallVector<unsigned, 1> Vals;
@@ -1765,7 +1766,7 @@ static void WriteModule(const Module *M, BitstreamWriter &Stream) {
   }
 
   // Analyze the module, enumerating globals, functions, etc.
-  llvm_3_2::ValueEnumerator VE(*M);
+  llvm_3_2::ValueEnumerator VE(*M, ShouldPreserveUseListOrder);
 
   // Emit blockinfo, which defines the standard abbreviations etc.
   WriteBlockInfo(VE, Stream);
@@ -1793,7 +1794,7 @@ static void WriteModule(const Module *M, BitstreamWriter &Stream) {
   WriteValueSymbolTable(M->getValueSymbolTable(), VE, Stream);
 
   // Emit module-level use-lists.
-  if (shouldPreserveBitcodeUseListOrder())
+  if (VE.shouldPreserveUseListOrder())
     WriteUseListBlock(nullptr, VE, Stream);
 
   // Emit function bodies.
@@ -1879,7 +1880,8 @@ static void EmitDarwinBCHeaderAndTrailer(SmallVectorImpl<char> &Buffer,
 
 /// WriteBitcodeToFile - Write the specified module to the specified output
 /// stream.
-void llvm_3_2::WriteBitcodeToFile(const Module *M, raw_ostream &Out) {
+void llvm_3_2::WriteBitcodeToFile(const Module *M, raw_ostream &Out,
+                                  bool ShouldPreserveUseListOrder) {
   SmallVector<char, 0> Buffer;
   Buffer.reserve(256*1024);
 
@@ -1902,7 +1904,7 @@ void llvm_3_2::WriteBitcodeToFile(const Module *M, raw_ostream &Out) {
     Stream.Emit(0xD, 4);
 
     // Emit the module.
-    WriteModule(M, Stream);
+    WriteModule(M, Stream, ShouldPreserveUseListOrder);
   }
 
   if (TT.isOSDarwin())

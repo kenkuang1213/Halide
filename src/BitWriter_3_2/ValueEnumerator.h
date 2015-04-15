@@ -65,6 +65,7 @@ private:
   MetadataMapType MDValueMap;
   bool HasMDString;
   bool HasMDLocation;
+  bool ShouldPreserveUseListOrder;
 
   typedef llvm::DenseMap<llvm::AttributeSet, unsigned> AttributeGroupMapType;
   AttributeGroupMapType AttributeGroupMap;
@@ -100,7 +101,7 @@ private:
   ValueEnumerator(const ValueEnumerator &) = delete;
   void operator=(const ValueEnumerator &) = delete;
 public:
-  ValueEnumerator(const llvm::Module &M);
+  ValueEnumerator(const llvm::Module &M, bool ShouldPreserveUseListOrder);
 
   void dump() const;
   void print(llvm::raw_ostream &OS, const ValueMapType &Map, const char *Name) const;
@@ -119,6 +120,8 @@ public:
 
   bool hasMDString() const { return HasMDString; }
   bool hasMDLocation() const { return HasMDLocation; }
+
+  bool shouldPreserveUseListOrder() const { return ShouldPreserveUseListOrder; }
 
   unsigned getTypeID(llvm::Type *T) const {
     TypeMapType::const_iterator I = TypeMap.find(T);

@@ -34,8 +34,13 @@ static bool isIntOrIntVectorValue(const std::pair<const Value*, unsigned> &V) {
 }
 
 /// ValueEnumerator - Enumerate module-level information.
-ValueEnumerator::ValueEnumerator(const llvm::Module &M)
-    : HasMDString(false), HasMDLocation(false) {
+ValueEnumerator::ValueEnumerator(const llvm::Module &M,
+                                 bool ShouldPreserveUseListOrder)
+    : HasMDString(false), HasMDLocation(false),
+    ShouldPreserveUseListOrder(ShouldPreserveUseListOrder) {
+  assert(!ShouldPreserveUseListOrder &&
+         "not supported UseListOrders = predictUseListOrder(M)");
+
   // Enumerate the global variables.
   for (llvm::Module::const_global_iterator I = M.global_begin(), E = M.global_end();
        I != E; ++I)

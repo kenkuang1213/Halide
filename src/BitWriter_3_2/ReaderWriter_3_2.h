@@ -53,12 +53,16 @@ namespace llvm_3_2 {
   /// WriteBitcodeToFile - Write the specified module to the specified
   /// raw output stream.  For streams where it matters, the given stream
   /// should be in "binary" mode.
-  void WriteBitcodeToFile(const llvm::Module *M, llvm::raw_ostream &Out);
+  /// If \c ShouldPreserveUseListOrder, encode the use-list order for each \a
+  /// Value in \c M.  These will be reconstructed exactly when \a M is
+  /// deserialized.
+  void WriteBitcodeToFile(const llvm::Module *M, llvm::raw_ostream &Out,
+                          bool ShouldPreserveUseListOrder = false);
 
   /// createBitcodeWriterPass - Create and return a pass that writes the module
   /// to the specified ostream.
-  llvm::ModulePass *createBitcodeWriterPass(llvm::raw_ostream &Str);
-
+  llvm::ModulePass *createBitcodeWriterPass(llvm::raw_ostream &Str,
+                                            bool ShouldPreserveUseListOrder);
 
   /// isBitcodeWrapper - Return true if the given bytes are the magic bytes
   /// for an LLVM IR bitcode wrapper.

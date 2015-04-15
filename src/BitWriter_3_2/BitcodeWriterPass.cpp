@@ -21,17 +21,19 @@ using namespace llvm;
 namespace {
   class WriteBitcodePass : public ModulePass {
     raw_ostream &OS; // raw_ostream to print on
+    bool ShouldPreserveUseListOrder;
 
   public:
     static char ID; // Pass identification, replacement for typeid
-    explicit WriteBitcodePass(raw_ostream &o)
-      : ModulePass(ID), OS(o) {}
+    explicit WriteBitcodePass(raw_ostream &o, bool ShouldPreserveUseListOrder)
+        : ModulePass(ID), OS(o),
+          ShouldPreserveUseListOrder(ShouldPreserveUseListOrder) {}
     
     const char *getPassName() const { return "Bitcode Writer"; }
     
     bool runOnModule(Module &M) {
       bool Changed = false;
-      llvm_3_2::WriteBitcodeToFile(&M, OS);
+      llvm_3_2::WriteBitcodeToFile(&M, OS, ShouldPreserveUseListOrder);
       return Changed;
     }
   };
@@ -41,6 +43,7 @@ char WriteBitcodePass::ID = 0;
 
 /// createBitcodeWriterPass - Create and return a pass that writes the module
 /// to the specified ostream.
-ModulePass *llvm_3_2::createBitcodeWriterPass(raw_ostream &Str) {
-  return new WriteBitcodePass(Str);
+ModulePass *llvm_3_2::createBitcodeWriterPass(raw_ostream &Str,
+                                          bool ShouldPreserveUseListOrder) {
+  return new WriteBitcodePass(Str, ShouldPreserveUseListOrder);
 }
