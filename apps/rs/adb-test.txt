@@ -1,0 +1,11 @@
+su
+mkdir /data/tmp
+cd /data/tmp
+pwd
+cp /mnt/sdcard/rstest .
+chmod 777 /data/tmp/rstest
+cp /mnt/sdcard/libstlport_shared.so .
+LD_LIBRARY_PATH=. ./rstest
+exit
+exit
+
