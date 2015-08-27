@@ -28,7 +28,10 @@ string CodeGen_OpenCL_Dev::CodeGen_OpenCL_C::print_type(Type type) {
         } else if (type.bits == 32) {
             oss << "float";
         } else if (type.bits == 64) {
-            oss << "double";
+            if(target.has_feature(CLEmbedded))
+                user_error<< "64-bit variable may not be supported on embedded devices \n";
+            else
+                oss << "double";
         } else {
             user_error << "Can't represent a float with this many bits in OpenCL C: " << type << "\n";
         }
@@ -50,7 +53,10 @@ string CodeGen_OpenCL_Dev::CodeGen_OpenCL_C::print_type(Type type) {
             oss << "int";
             break;
         case 64:
-            oss << "long";
+            if (target.has_feature(CLEmbedded)))
+                user_error<< "64-bit variable may not be supported on embedded devices\n";
+            else
+                oss << "long";
             break;
         default:
             user_error << "Can't represent an integer with this many bits in OpenCL C: " << type << "\n";
@@ -538,13 +544,13 @@ void CodeGen_OpenCL_Dev::init_module() {
                << "float float_from_bits(unsigned int x) {return as_float(x);}\n"
                << smod_def("char") << "\n"
                << smod_def("short") << "\n"
-               << smod_def("int") << "\n"
-               << smod_def("long") << "\n"
-               << sdiv_def("char") << "\n"
+               << smod_def("int") << "\n";
+    if(!target.has_feature(CLEmbedded)) src_stream << smod_def("long") << "\n";
+    src_stream << sdiv_def("char") << "\n"
                << sdiv_def("short") << "\n"
-               << sdiv_def("int") << "\n"
-               << sdiv_def("long") << "\n"
-               << "#define sqrt_f32 sqrt \n"
+               << sdiv_def("int") << "\n";
+    if(!target.has_feature(CLEmbedded)) src_stream << sdiv_def("long") << "\n";
+    src_stream << "#define sqrt_f32 sqrt \n"
                << "#define sin_f32 sin \n"
                << "#define cos_f32 cos \n"
                << "#define exp_f32 exp \n"

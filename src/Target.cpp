@@ -298,6 +298,8 @@ bool Target::merge_string(const std::string &target) {
             set_feature(Target::NoBoundsQuery);
         } else if (tok == "cl_doubles") {
             set_feature(Target::CLDoubles);
+        } else if (tok == "cl_embedded") {
+            set_feature(Target::CLEmbedded);
         } else if (tok == "fma") {
             set_features({Target::FMA, Target::SSE41, Target::AVX});
         } else if (tok == "fma4") {
